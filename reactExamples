@@ -1,0 +1,124 @@
+mport React, { Component } from 'react';
+import { Header } from '../../components/common/header/header';
+import styled from 'styled-components';
+import TableAdmin from './tableAdmin.json';
+import { Button } from '../../components/input/button/button';
+import { transparent } from '../../utils/variables';
+import { ContainerWithoutBG } from '../../utils/general-styles';
+import { TableContainer, TableHeader, TableRow } from '../informes/informes_styles';
+import { InputComponent} from '../../components/input/generic_input/input';
+
+class DBTable extends Component {
+    constructor(props) {
+        super(props);
+        this.state = {
+            rowChecked: null,
+            json: TableAdmin.search.data,
+        }
+
+        this.saveData = this.saveData.bind(this);
+    }
+
+
+    agregarCabecera() {
+        const { json } = this.state;
+        const cabe = []
+        json.forEach((element, index) => {
+            const cabecera = Object.keys(element);
+            if (index === 0) {
+                cabecera.forEach(cabeF => {
+                    cabe.push(<th key={cabeF}>{cabeF}</th>);
+                })
+                cabe.push(<th key={index}>Acciones</th>)
+            }
+        });
+        return cabe;
+    }
+
+    setData(attr, value) {
+        const {rowChecked} = this.state;
+        const newObj = Object.assign({}, rowChecked);
+        newObj[attr] = value;
+        this.setState({
+            rowChecked: newObj
+        });
+    }
+
+    agregarFila() {
+        const { rowChecked, json } = this.state;
+
+        const filasR = [];
+
+        json.forEach((element, index) => {
+            const keys = Object.keys(element);
+            const row = [];
+
+            keys.forEach((key, i) => {
+                if (rowChecked?.id === element.id && key !== 'id') {
+                    switch(typeof element[key]) {
+                        case 'string': 
+                            row.push(<td key={element[key] + i}><InputComponent onChange={e => this.setData(key, e.target.value)} value={element[key]} /></td>)
+                            break;
+                        case 'number': 
+                            row.push(<td key={element[key] + i}><InputComponent type="checkbox" onChange={e => this.setData(key, e.target.value)}  defaultChecked={element[key] === 1} /></td>)
+                            break;
+                       
+                        default: 
+                            break;
+                    }
+                } else {
+                    row.push(<td key={element[key] + i}>{element[key]}</td>)
+                }
+                if (i === keys.length - 1) {
+                    if (rowChecked) {
+                        if (rowChecked?.id === element.id) {
+                            row.push(<td key={element[key] + "1"}>
+                                <Button border={transparent} background={transparent} icon="far fa-save" userClick={this.saveData} />
+                                <Button border={transparent} background={transparent} icon="fas fa-times" userClick={() => this.setState({ rowChecked: null })} /></td>
+                            )
+                        }
+                    } else {
+                        row.push(<td key={element[key] + "5"}><Button border={transparent} background={transparent} icon="far fa-edit" userClick={() => this.setState({ rowChecked: element })} /></td>)
+                    }
+                }
+            });
+            filasR.push(<TableRow key={index}>{row}</TableRow>);
+
+        });
+
+        return filasR;
+    }
+
+
+    saveData() {
+        const { rowChecked,json} = this.state
+        
+        // Clonas objeto json y sustituyes por rowChecked
+        const newObj = []
+
+        json.forEach((item) => {
+            console.log(item, " item")
+            item.id === rowChecked.id ? newObj.push(rowChecked) : newObj.push(item)
+        })
+
+        this.setState({
+            json: newObj,
+            rowChecked: null
+        })
+
+    }
+
+    render() {
+        return (<>
+            <Header />
+            <ContainerWithoutBG>
+                <TableContainer>
+                    <thead><TableHeader>{this.agregarCabecera()}</TableHeader></thead>
+                    <tbody>{this.agregarFila()}</tbody>
+                </TableContainer>
+            </ContainerWithoutBG>
+        </>)
+    }
+}
+
+export default DBTable;
